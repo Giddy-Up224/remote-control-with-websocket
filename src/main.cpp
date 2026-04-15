@@ -11,6 +11,7 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+#include "creds.h"
 
 // ----------------------------------------------------------------------------
 // Definition of macros
@@ -27,9 +28,6 @@
 // Button debouncing
 const uint8_t DEBOUNCE_DELAY = 10; // in milliseconds
 
-// WiFi credentials
-const char *WIFI_SSID = "YOUR_WIFI_SSID";
-const char *WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
 // ----------------------------------------------------------------------------
 // Definition of the LED component
