@@ -7,11 +7,11 @@
  */
 
 #include <Arduino.h>
-#include <SPIFFS.h>
-#include <DNSServer.h>
-#include <WiFi.h>
-#include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+#include <DNSServer.h>
+#include <ESPAsyncWebServer.h>
+#include <SPIFFS.h>
+#include <WiFi.h>
 #include "creds.h"
 
 // ----------------------------------------------------------------------------
@@ -26,7 +26,6 @@
 // Definition of global constants
 // ----------------------------------------------------------------------------
 
-
 // ----------------------------------------------------------------------------
 // Definition of the LED component
 // ----------------------------------------------------------------------------
@@ -34,7 +33,7 @@
 struct Led {
     // state variables
     uint8_t pin;
-    bool    on;
+    bool on;
 
     // methods
     void update() {
@@ -46,7 +45,7 @@ struct Led {
 // Definition of global variables
 // ----------------------------------------------------------------------------
 
-Led    onboard_led = { LED_BUILTIN, false };
+Led onboard_led = {LED_BUILTIN, false};
 
 AsyncWebServer server(HTTP_PORT);
 AsyncWebSocket ws("/ws");
@@ -57,9 +56,9 @@ static DNSServer dnsServer;
 // ----------------------------------------------------------------------------
 
 void initSPIFFS() {
-  if (!SPIFFS.begin()) {
-    Serial.println("Cannot mount SPIFFS volume...");
-  }
+    if (!SPIFFS.begin()) {
+        Serial.println("Cannot mount SPIFFS volume...");
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -67,17 +66,17 @@ void initSPIFFS() {
 // ----------------------------------------------------------------------------
 
 void initWiFi() {
-  IPAddress IP(192, 168, 1, 1);
-  IPAddress gateway(192, 168, 1, 1);
-  IPAddress subnet(255, 255, 255, 0);
-  if(!WiFi.softAP(WIFI_SSID, WIFI_PASS)) {
-      Serial.println("Soft AP creation failed");
+    IPAddress IP(192, 168, 1, 1);
+    IPAddress gateway(192, 168, 1, 1);
+    IPAddress subnet(255, 255, 255, 0);
+    if (!WiFi.softAP(WIFI_SSID, WIFI_PASS)) {
+        Serial.println("Soft AP creation failed");
       while(1);
-  }
-  delay(500);
-  WiFi.softAPConfig(IP, gateway, subnet);
-  dnsServer.start(53, "*", WiFi.softAPIP());
-  Serial.printf("AP IP [%s] ", WiFi.softAPIP().toString().c_str());
+    }
+    delay(500);
+    WiFi.softAPConfig(IP, gateway, subnet);
+    dnsServer.start(53, "*", WiFi.softAPIP());
+    Serial.printf("AP IP [%s] ", WiFi.softAPIP().toString().c_str());
 }
 
 // ----------------------------------------------------------------------------
@@ -130,7 +129,6 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
             onboard_led.on = !onboard_led.on;
             notifyClients();
         }
-
     }
 }
 
@@ -142,18 +140,18 @@ void onEvent(AsyncWebSocket       *server,
              size_t                len) {
 
     switch (type) {
-        case WS_EVT_CONNECT:
-            Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-            break;
-        case WS_EVT_DISCONNECT:
-            Serial.printf("WebSocket client #%u disconnected\n", client->id());
-            break;
-        case WS_EVT_DATA:
-            handleWebSocketMessage(arg, data, len);
-            break;
-        case WS_EVT_PONG:
-        case WS_EVT_ERROR:
-            break;
+    case WS_EVT_CONNECT:
+        Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+        break;
+    case WS_EVT_DISCONNECT:
+        Serial.printf("WebSocket client #%u disconnected\n", client->id());
+        break;
+    case WS_EVT_DATA:
+        handleWebSocketMessage(arg, data, len);
+        break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+        break;
     }
 }
 
@@ -169,7 +167,8 @@ void initWebSocket() {
 void setup() {
     pinMode(onboard_led.pin, OUTPUT);
 
-    Serial.begin(115200); delay(500);
+    Serial.begin(115200);
+    delay(500);
 
     initSPIFFS();
     initWiFi();
