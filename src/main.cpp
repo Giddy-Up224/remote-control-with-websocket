@@ -25,9 +25,6 @@
 // Definition of global constants
 // ----------------------------------------------------------------------------
 
-// Button debouncing
-const uint8_t DEBOUNCE_DELAY = 10; // in milliseconds
-
 
 // ----------------------------------------------------------------------------
 // Definition of the LED component
@@ -45,59 +42,10 @@ struct Led {
 };
 
 // ----------------------------------------------------------------------------
-// Definition of the Button component
-// ----------------------------------------------------------------------------
-
-struct Button {
-    // state variables
-    uint8_t  pin;
-    bool     lastReading;
-    uint32_t lastDebounceTime;
-    uint16_t state;
-
-    // methods determining the logical state of the button
-    bool pressed()                { return state == 1; }
-    bool released()               { return state == 0xffff; }
-    bool held(uint16_t count = 0) { return state > 1 + count && state < 0xffff; }
-
-    // method for reading the physical state of the button
-    void read() {
-        // reads the voltage on the pin connected to the button
-        bool reading = digitalRead(pin);
-
-        // if the logic level has changed since the last reading,
-        // we reset the timer which counts down the necessary time
-        // beyond which we can consider that the bouncing effect
-        // has passed.
-        if (reading != lastReading) {
-            lastDebounceTime = millis();
-        }
-
-        // from the moment we're out of the bouncing phase
-        // the actual status of the button can be determined
-        if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
-            // don't forget that the read pin is pulled-up
-            bool pressed = reading == LOW;
-            if (pressed) {
-                     if (state  < 0xfffe) state++;
-                else if (state == 0xfffe) state = 2;
-            } else if (state) {
-                state = state == 0xffff ? 0 : 0xffff;
-            }
-        }
-
-        // finally, each new reading is saved
-        lastReading = reading;
-    }
-};
-
-// ----------------------------------------------------------------------------
 // Definition of global variables
 // ----------------------------------------------------------------------------
 
 Led    onboard_led = { LED_BUILTIN, false };
-Led    led         = { LED_PIN, false };
-Button button      = { BTN_PIN, HIGH, 0, 0 };
 
 AsyncWebServer server(HTTP_PORT);
 AsyncWebSocket ws("/ws");
@@ -109,10 +57,6 @@ AsyncWebSocket ws("/ws");
 void initSPIFFS() {
   if (!SPIFFS.begin()) {
     Serial.println("Cannot mount SPIFFS volume...");
-    while (1) {
-        onboard_led.on = millis() % 200 < 50;
-        onboard_led.update();
-    }
   }
 }
 
@@ -136,7 +80,7 @@ void initWiFi() {
 // ----------------------------------------------------------------------------
 
 String processor(const String &var) {
-    return String(var == "STATE" && led.on ? "on" : "off");
+    return String(var == "STATE" && onboard_led.on ? "on" : "off");
 }
 
 void onRootRequest(AsyncWebServerRequest *request) {
@@ -156,7 +100,7 @@ void initWebServer() {
 void notifyClients() {
     const uint8_t size = JSON_OBJECT_SIZE(1);
     StaticJsonDocument<size> json;
-    json["status"] = led.on ? "on" : "off";
+    json["status"] = onboard_led.on ? "on" : "off";
 
     char buffer[17];
     size_t len = serializeJson(json, buffer);
@@ -178,7 +122,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 
         const char *action = json["action"];
         if (strcmp(action, "toggle") == 0) {
-            led.on = !led.on;
+            onboard_led.on = !onboard_led.on;
             notifyClients();
         }
 
@@ -219,8 +163,6 @@ void initWebSocket() {
 
 void setup() {
     pinMode(onboard_led.pin, OUTPUT);
-    pinMode(led.pin,         OUTPUT);
-    pinMode(button.pin,      INPUT);
 
     Serial.begin(115200); delay(500);
 
@@ -236,16 +178,5 @@ void setup() {
 
 void loop() {
     ws.cleanupClients();
-
-    button.read();
-
-    if (button.pressed()) {
-        led.on = !led.on;
-        notifyClients();
-    }
-    
-    onboard_led.on = millis() % 1000 < 50;
-
-    led.update();
     onboard_led.update();
 }
