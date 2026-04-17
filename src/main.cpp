@@ -8,7 +8,6 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <DNSServer.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
@@ -49,7 +48,6 @@ Led onboard_led = {LED_BUILTIN, false};
 
 AsyncWebServer server(HTTP_PORT);
 AsyncWebSocket ws("/ws");
-static DNSServer dnsServer;
 
 // ----------------------------------------------------------------------------
 // SPIFFS initialization
@@ -66,17 +64,14 @@ void initSPIFFS() {
 // ----------------------------------------------------------------------------
 
 void initWiFi() {
-    IPAddress IP(192, 168, 1, 1);
-    IPAddress gateway(192, 168, 1, 1);
-    IPAddress subnet(255, 255, 255, 0);
-    if (!WiFi.softAP(WIFI_SSID, WIFI_PASS)) {
-        Serial.println("Soft AP creation failed");
-      while(1);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    Serial.printf("Trying to connect [%s] ", WiFi.macAddress().c_str());
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print(".");
+        delay(500);
     }
-    delay(500);
-    WiFi.softAPConfig(IP, gateway, subnet);
-    dnsServer.start(53, "*", WiFi.softAPIP());
-    Serial.printf("AP IP [%s] ", WiFi.softAPIP().toString().c_str());
+    Serial.printf(" %s\n", WiFi.localIP().toString().c_str());
 }
 
 // ----------------------------------------------------------------------------
